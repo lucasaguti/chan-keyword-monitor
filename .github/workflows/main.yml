@@ -2,7 +2,7 @@ name: 4chan keyword monitor
 
 on:
   schedule:
-    - cron: "*/5 * * * *"   # every 5 minutes (GitHub minimum)
+    - cron: "2-59/5 * * * *"   # every 5 minutes (GitHub minimum)
   workflow_dispatch:
 
 jobs:
@@ -19,3 +19,7 @@ jobs:
           THRESHOLD: "40"
           WHOLE_WORD: "0"
         run: python3 monitor_4chan.py
+
+concurrency:
+  group: 4chan-monitor
+  cancel-in-progress: true
