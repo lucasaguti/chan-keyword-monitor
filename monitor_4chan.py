@@ -32,7 +32,7 @@ def send_pushover_emergency(message: str):
         "priority": 2,          # EMERGENCY
         "retry": 30,             # repeat every 30s
         "expire": 3600,          # for up to 1 hour
-        "sound": "persistent"         # loud alarm sound
+        "sound": "pushover"         # loud alarm sound
     }).encode("utf-8")
 
     req = urllib.request.Request(
