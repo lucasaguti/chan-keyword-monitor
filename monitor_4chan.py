@@ -5,6 +5,7 @@ import urllib.request
 import urllib.parse
 from datetime import datetime, timezone
 
+
 CATALOG_URL = "https://a.4cdn.org/pol/catalog.json"
 KEYWORD = os.getenv("KEYWORD", "happening")
 THRESHOLD = int(os.getenv("THRESHOLD", "40"))
@@ -22,6 +23,26 @@ def fetch_catalog():
     )
     with urllib.request.urlopen(req, timeout=20) as resp:
         return json.loads(resp.read().decode("utf-8"))
+
+def send_pushover_emergency(message: str):
+    data = urllib.parse.urlencode({
+        "token": os.environ["PUSHOVER_APP_TOKEN"],
+        "user": os.environ["PUSHOVER_USER_KEY"],
+        "message": message,
+        "priority": 2,          # EMERGENCY
+        "retry": 30,             # repeat every 30s
+        "expire": 3600,          # for up to 1 hour
+        "sound": "siren"         # loud alarm sound
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://api.pushover.net/1/messages.json",
+        data=data,
+        method="POST"
+    )
+
+    with urllib.request.urlopen(req, timeout=20) as resp:
+        resp.read()
 
 def count_keyword(catalog, keyword: str) -> int:
     # Count occurrences across thread subject (sub) + comment/snippet (com)
@@ -59,7 +80,16 @@ def main():
     count = count_keyword(catalog, KEYWORD)
 
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
     if count >= THRESHOLD:
+        # Alarm (Pushover Emergency)
+        send_pushover_emergency(
+            f"🚨 KEYWORD ALARM 🚨\n"
+            f"'{KEYWORD}' count is {count} (>= {THRESHOLD}) on /pol/ catalog.\n"
+            f"Time: {now}\n"
+            f"Check /pol/ catalog immediately."
+        )
+
         send_telegram(
             f"ALERT: '{KEYWORD}' count is {count} (>= {THRESHOLD}) on /pol/ catalog.\n"
             f"Time: {now}\n"
