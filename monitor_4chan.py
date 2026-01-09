@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 CATALOG_URL = "https://a.4cdn.org/pol/catalog.json"
 KEYWORD = os.getenv("KEYWORD", "happening")
-THRESHOLD = int(os.getenv("THRESHOLD", "40"))
+THRESHOLD = int(os.getenv("THRESHOLD", "25"))
 
 # Optional: whole-word matching (set WHOLE_WORD=1 in env to enable)
 WHOLE_WORD = os.getenv("WHOLE_WORD", "0") == "1"
@@ -32,7 +32,7 @@ def send_pushover_emergency(message: str):
         "priority": 2,          # EMERGENCY
         "retry": 30,             # repeat every 30s
         "expire": 3600,          # for up to 1 hour
-        "sound": "persistent"         # loud alarm sound
+        "sound": "echo"         # loud alarm sound
     }).encode("utf-8")
 
     req = urllib.request.Request(
