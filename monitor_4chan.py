@@ -6,6 +6,8 @@ import urllib.parse
 from datetime import datetime, timezone
 
 
+COOLDOWN_SECONDS = 60 * 60  # 60 minutes
+LAST_ALARM_FILE = ".last_alarm"
 CATALOG_URL = "https://a.4cdn.org/pol/catalog.json"
 KEYWORD = os.getenv("KEYWORD", "happening")
 THRESHOLD = int(os.getenv("THRESHOLD", "25"))
@@ -75,29 +77,56 @@ def send_telegram(message: str):
     with urllib.request.urlopen(req, timeout=20) as resp:
         resp.read()
 
+def get_last_alarm_time():
+    if not os.path.exists(LAST_ALARM_FILE):
+        return None
+    try:
+        with open(LAST_ALARM_FILE, "r") as f:
+            return float(f.read().strip())
+    except Exception:
+        return None
+
+def set_last_alarm_time(ts: float):
+    with open(LAST_ALARM_FILE, "w") as f:
+        f.write(str(ts))
+
 def main():
     catalog = fetch_catalog()
     count = count_keyword(catalog, KEYWORD)
 
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    now_dt = datetime.now(timezone.utc)
+    now_str = now_dt.strftime("%Y-%m-%d %H:%M UTC")
+    now_ts = now_dt.timestamp()
 
     if count >= THRESHOLD:
-        # Alarm (Pushover Emergency)
+        last_alarm = get_last_alarm_time()
+
+        if last_alarm and (now_ts - last_alarm) < COOLDOWN_SECONDS:
+            remaining = int((COOLDOWN_SECONDS - (now_ts - last_alarm)) / 60)
+            print(
+                f"{now_str} ABOVE threshold, "
+                f"but cooldown active ({remaining} min remaining)"
+            )
+            return
+
+        # 🔔 FIRE ALARM
         send_pushover_emergency(
             f"🚨 KEYWORD ALARM 🚨\n"
             f"'{KEYWORD}' count is {count} (>= {THRESHOLD}) on /pol/ catalog.\n"
-            f"Time: {now}\n"
+            f"Time: {now_str}\n"
             f"Check /pol/ catalog immediately."
         )
 
         send_telegram(
             f"ALERT: '{KEYWORD}' count is {count} (>= {THRESHOLD}) on /pol/ catalog.\n"
-            f"Time: {now}\n"
+            f"Time: {now_str}\n"
             f"Source: {CATALOG_URL}"
         )
+
+        set_last_alarm_time(now_ts)
+
     else:
-        # Keep Actions logs useful without spamming Telegram
-        print(f"{now} OK: '{KEYWORD}' count={count}, threshold={THRESHOLD}")
+        print(f"{now_str} OK: '{KEYWORD}' count={count}, threshold={THRESHOLD}")
 
 if __name__ == "__main__":
     main()
