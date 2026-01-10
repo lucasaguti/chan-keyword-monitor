@@ -2,7 +2,7 @@ name: 4chan keyword monitor
 
 on:
   workflow_dispatch:
-  
+
 concurrency:
   group: 4chan-monitor
   cancel-in-progress: true
@@ -17,7 +17,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .last_alarm
-          key: alarm-cooldown
+          key: alarm-cooldown-${{ github.run_id }}
+          restore-keys: |
+            alarm-cooldown-
 
       - name: Run monitor
         env:
@@ -26,7 +28,6 @@ jobs:
           PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
           PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
           KEYWORD: "happening"
-          THRESHOLD: "25"
+          THRESHOLD: "1"
           WHOLE_WORD: "0"
         run: python3 monitor_4chan.py
-
