@@ -28,6 +28,6 @@ jobs:
           PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
           PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
           KEYWORD: "happening"
-          THRESHOLD: "22"
+          THRESHOLD: "25"
           WHOLE_WORD: "0"
         run: python3 monitor_4chan.py
